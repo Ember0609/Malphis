@@ -21,65 +21,41 @@ def calculate_entropy(data):
 
 def extract_pe_features(pe, file_bytes: bytes) -> dict:
     features = {}
-    
     try:
-        features['ImageBase'] = pe.OPTIONAL_HEADER.ImageBase
-        features['MajorOperatingSystemVersion'] = pe.OPTIONAL_HEADER.MajorOperatingSystemVersion
-        features['MinorOperatingSystemVersion'] = pe.OPTIONAL_HEADER.MinorOperatingSystemVersion
-        features['MajorSubsystemVersion'] = pe.OPTIONAL_HEADER.MajorSubsystemVersion
-        features['MinorSubsystemVersion'] = pe.OPTIONAL_HEADER.MinorSubsystemVersion
-        features['Subsystem'] = pe.OPTIONAL_HEADER.Subsystem
-        features['SizeOfStackReserve'] = pe.OPTIONAL_HEADER.SizeOfStackReserve
-        features['SizeOfHeapReserve'] = pe.OPTIONAL_HEADER.SizeOfHeapReserve
-        features['SizeOfHeapCommit'] = pe.OPTIONAL_HEADER.SizeOfHeapCommit
+        # ฟีเจอร์พฤติกรรมโครงสร้างแบบทนทาน (Robust Features) ให้ตรงกับ dataset_malwares.csv
+        features['Machine'] = pe.FILE_HEADER.Machine
+        features['NumberOfSections'] = pe.FILE_HEADER.NumberOfSections
+        features['Characteristics'] = pe.FILE_HEADER.Characteristics
         
-        fh_char = pe.FILE_HEADER.Characteristics
-        features['FH_char0'] = (fh_char >> 0) & 1
-        features['FH_char2'] = (fh_char >> 2) & 1
-        features['FH_char3'] = (fh_char >> 3) & 1
-        features['FH_char12'] = (fh_char >> 12) & 1
-        
-        dll_char = pe.OPTIONAL_HEADER.DllCharacteristics
-        features['OH_DLLchar0'] = (dll_char >> 0) & 1
-        features['OH_DLLchar2'] = (dll_char >> 2) & 1
-        features['OH_DLLchar7'] = (dll_char >> 7) & 1
-        
-        features['E_file'] = calculate_entropy(file_bytes)
-        
-        e_text = 0.0
-        e_data = 0.0
-        sus_sections = 0
-        standard_sections = [b'.text', b'.data', b'.rdata', b'.rsrc', b'.bss', b'.edata', b'.idata', b'.pdata', b'.reloc']
-        
-        for section in pe.sections:
-            name = section.Name.replace(b'\x00', b'')
-            if name == b'.text':
-                e_text = calculate_entropy(section.get_data())
-            elif name == b'.data':
-                e_data = calculate_entropy(section.get_data())
-            
-            if name not in standard_sections:
-                sus_sections += 1
-                
-        features['E_text'] = e_text
-        features['E_data'] = e_data
-        features['sus_sections'] = sus_sections
-        
-        features['fileinfo'] = 1 if hasattr(pe, 'FileInfo') and len(pe.FileInfo) > 0 else 0
-
-        # --- เพิ่มการดึงค่า Raw Features ก่อนแปลง ---
+        features['Magic'] = getattr(pe.OPTIONAL_HEADER, 'Magic', 0)
         features['SizeOfCode'] = getattr(pe.OPTIONAL_HEADER, 'SizeOfCode', 0)
         features['SizeOfInitializedData'] = getattr(pe.OPTIONAL_HEADER, 'SizeOfInitializedData', 0)
-        features['SizeOfImage'] = getattr(pe.OPTIONAL_HEADER, 'SizeOfImage', 0)
-        features['filesize'] = len(file_bytes)
+        features['SizeOfUninitializedData'] = getattr(pe.OPTIONAL_HEADER, 'SizeOfUninitializedData', 0)
+        features['AddressOfEntryPoint'] = getattr(pe.OPTIONAL_HEADER, 'AddressOfEntryPoint', 0)
+        features['BaseOfCode'] = getattr(pe.OPTIONAL_HEADER, 'BaseOfCode', 0)
+        features['SectionAlignment'] = getattr(pe.OPTIONAL_HEADER, 'SectionAlignment', 0)
+        features['FileAlignment'] = getattr(pe.OPTIONAL_HEADER, 'FileAlignment', 0)
+        features['MajorSubsystemVersion'] = getattr(pe.OPTIONAL_HEADER, 'MajorSubsystemVersion', 0)
+        features['SizeOfHeaders'] = getattr(pe.OPTIONAL_HEADER, 'SizeOfHeaders', 0)
+        features['Subsystem'] = getattr(pe.OPTIONAL_HEADER, 'Subsystem', 0)
+        features['DllCharacteristics'] = getattr(pe.OPTIONAL_HEADER, 'DllCharacteristics', 0)
+        features['SizeOfStackReserve'] = getattr(pe.OPTIONAL_HEADER, 'SizeOfStackReserve', 0)
+        features['SizeOfHeapReserve'] = getattr(pe.OPTIONAL_HEADER, 'SizeOfHeapReserve', 0)
+        features['LoaderFlags'] = getattr(pe.OPTIONAL_HEADER, 'LoaderFlags', 0)
 
-        # --- คำนวณ Engineered Features แบบเดียวกับตอน Train ---
-        features['Code_to_Image_Ratio'] = features['SizeOfCode'] / (features['SizeOfImage'] + 1e-5)
-        features['InitData_to_Image_Ratio'] = features['SizeOfInitializedData'] / (features['SizeOfImage'] + 1e-5)
-        features['Entropy_Diff'] = abs(features['E_text'] - features['E_data'])
-
-        for col in ['filesize', 'SizeOfCode', 'SizeOfInitializedData', 'SizeOfImage']:
-            features[f'Log_{col}'] = np.log1p(features[col])
+        entropies = []
+        raw_sizes = []
+        virtual_sizes = []
+        
+        for section in pe.sections:
+            entropies.append(section.get_entropy())
+            raw_sizes.append(section.SizeOfRawData)
+            virtual_sizes.append(section.Misc_VirtualSize)
+            
+        features['SectionMinEntropy'] = min(entropies) if entropies else 0.0
+        features['SectionMaxEntropy'] = max(entropies) if entropies else 0.0
+        features['SectionMaxRawsize'] = max(raw_sizes) if raw_sizes else 0
+        features['SectionMaxVirtualsize'] = max(virtual_sizes) if virtual_sizes else 0
 
     except Exception as e:
         pass

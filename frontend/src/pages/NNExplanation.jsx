@@ -130,21 +130,20 @@ export default function NNExplanation() {
           </Box>
 
           <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3, lineHeight: 1.8 }}>
-            ในการจำแนก URL ว่าปลอดภัยหรืออันตราย โมเดลไม่สามารถอ่านข้อความ URL ได้ตรงๆ เราจึงต้องทำ <strong style={{ color: '#a78bfa' }}>Feature Engineering</strong> โดยใช้ฟังก์ชัน <strong style={{ color: '#a78bfa' }}>extract_url_features()</strong> สกัดคุณลักษณะเชิงโครงสร้าง (Lexical) และความผิดปกติ (Anomalies) ออกมาเป็นตัวเลข รวม <strong style={{ color: '#34d399' }}>57 Features</strong> เพื่อป้อนให้ Neural Network
+            ใช้ชุดข้อมูล <Link href="https://www.kaggle.com/datasets/jayendra0000/phishing-website-dataset?select=full_dataset.csv" target="_blank" rel="noopener noreferrer" sx={{ color: '#a78bfa', fontWeight: 'bold', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>Url.csv</Link> ใช้ฟังก์ชัน <strong style={{ color: '#a78bfa' }}>extract_url_features()</strong> สกัดคุณลักษณะของ URL ออกมาเป็นข้อมูลตัวเลขจำนวน <strong style={{ color: '#34d399' }}>57 Features</strong>
           </Typography>
 
           <Typography variant="subtitle2" sx={{ color: 'secondary.light', mb: 2 }}>
             <DatasetIcon sx={{ fontSize: 18, mr: 0.5, verticalAlign: 'text-bottom' }} />
-            เทคนิคการสกัด Features (แบ่งเป็น 6 หมวดหลัก):
+            กลุ่มฟีเจอร์ที่สะกัด:
           </Typography>
-          
+
           <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3, lineHeight: 1.8 }}>
-            <strong style={{ color: '#60a5fa' }}>1. Basic:</strong> จำนวนอักษรพิเศษ, สัดส่วนตัวเลขต่อตัวอักษร, ความยาว URL <br/>
-            <strong style={{ color: '#60a5fa' }}>2. Binary Flags:</strong> การเข้าถึงผ่าน IP ตรงๆ (มีโอกาสเป็น Phishing สูง), การใช้บริการย่อลิงก์ (Short URL) <br/>
-            <strong style={{ color: '#60a5fa' }}>3. Defacement:</strong> ความลึกของ Path, การพบ Keyword ของการโจมตีแฝง <br/>
-            <strong style={{ color: '#60a5fa' }}>4. Phishing:</strong> ตรวจหาชื่อแบงก์หรือแบรนด์ (Brand Hijacking), TLD ที่น่าสงสัย <br/>
-            <strong style={{ color: '#60a5fa' }}>5. Enhanced:</strong> ตรวจจับคำเร่งเร้า (Urgent words) เช่น "verify", "secure", "update" <br/>
-            <strong style={{ color: '#60a5fa' }}>6. Advanced:</strong> ค่า Entropy ของตัวอักษรเพื่อจับสังเกตโดเมนที่เกิดจากการสุ่ม (DGA)
+            <strong style={{ color: '#60a5fa' }}>1. Basic:</strong> จำนวนอักษรพิเศษ, สัดส่วนตัวเลข,<br />
+            <strong style={{ color: '#60a5fa' }}>2. Binary:</strong> การใช้งาน IP, บริการ Short URL <br />
+            <strong style={{ color: '#60a5fa' }}>3. Payload:</strong> ตรวจหา Keyword ของการโจมตี <br />
+            <strong style={{ color: '#60a5fa' }}>4. Behavioral:</strong> เช็คชื่อแบงก์หรือแบรนด์, ตรวจสอบ TLD <br />
+            <strong style={{ color: '#60a5fa' }}>5. Advanced:</strong> คำนวณ Entropy ของตัวอักษร
           </Typography>
 
           <Typography variant="subtitle2" sx={{ color: 'secondary.light', mb: 2 }}>
@@ -174,35 +173,32 @@ export default function NNExplanation() {
           </Box>
 
           <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3, lineHeight: 1.8 }}>
-            เนื่องจาก Deep Neural Network มีความอ่อนไหวต่อสเกลของข้อมูลดิบอย่างมาก การเตรียมข้อมูลแบบพิเศษเจาะจงด้วยกระบวนการต่างๆ จึงจำเป็นต่อความรวดเร็วในการ Train และความแม่นยำของโมเดล:
+            ขั้นตอนการเตรียมข้อมูลสู่กระบวนการเรียนรู้ (Data Transformation):
           </Typography>
 
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Box>
               <Typography variant="subtitle2" sx={{ color: '#60a5fa', mb: 0.5 }}>
-                🏷️ Lexical & Binary Feature Extraction
+                🏷️ Feature Extraction
               </Typography>
               <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-                ข้อมูล URL จะถูกสกัดให้อยู่ในรูปของโครงสร้างกายภาพเชิงปริมาณ (Lexical Feature - เช่น การนับจำนวนอักษรพิเศษต่างๆ) 
-                และการเช็คเงื่อนไขให้ออกมาเป็นค่า Binary (0 หรือ 1) เช่น การเช็คว่ามาจากบริการ Short URL หรือไม่
-                ทำให้ได้ชุดข้อมูลตัวเลขล้วนที่พร้อมป้อนเข้าสู่โครงข่ายประสาทเทียมเพื่อประมวลผลได้ทันที
+                แปลรูป URL ให้เป็นข้อมูลปริมาณโครงสร้าง (Lexical) และแปลงเงื่อนไขต่างๆ เป็นตรรกะ Binary (0/1)
               </Typography>
             </Box>
             <Box>
               <Typography variant="subtitle2" sx={{ color: '#a78bfa', mb: 0.5 }}>
-                🩹 Median Imputation (การตระเตรียมข้อมูลสูญหาย)
+                🩹 Median Imputation
               </Typography>
               <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-                หากการสกัดคุณลักษณะจากบาง URL ล้มเหลวและได้จุดข้อมูลที่เป็นช่องโหว่ (NaN) จะถูกชดเชยด้วย <code>SimpleImputer(strategy='median')</code> นำค่ากึ่งกลางมาเสียบเข้าไปแทนที่เพื่อไม่ให้ข้อมูลคลาดเคลื่อนจาก Outliers จนเกินไป
+                ใช้ฟังก์ชัน <code>SimpleImputer(strategy='median')</code> นำค่ามัธยฐานมาแทนข้อมูลส่วนที่สูญหาย (NaN)
               </Typography>
             </Box>
             <Box>
               <Typography variant="subtitle2" sx={{ color: '#10b981', mb: 0.5 }}>
-                📏 Standardization / Feature Scaling
+                📏 Standardization
               </Typography>
               <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-                ขั้นตอนนี้สำคัญระดับวิกฤต (Critical) สำหรับ Deep Learning เราใช้ <code>StandardScaler</code> ปรับสเกลให้อยู่ในหน่วย Z-Score (Mean=0, Std=1) 
-                หากไม่ Scale ข้อมูล จะทำให้ค่า Gradient มหาศาลพุ่งกระฉูด (Exploding Gradient) จนส่งผลกระทบต่อ Bias ของ Neuron ในชั้นลึก
+                ทำ <code>StandardScaler</code> ปรับสเกลฐานข้อมูลให้อยู่ในระยะ Z-Score (Mean=0, Std=1)
               </Typography>
             </Box>
           </Box>
@@ -218,9 +214,7 @@ export default function NNExplanation() {
           </Box>
 
           <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3, lineHeight: 1.8 }}>
-            ใช้ <strong style={{ color: '#a78bfa' }}>Deep Neural Network (DNN)</strong> แบบ Sequential
-            ซึ่งเป็นโครงข่ายประสาทเทียม 2 Hidden Layers (128 → 64 neurons) พร้อม Dropout 30%
-            ที่สามารถเรียนรู้ patterns จาก 57 Features ได้อย่างมีประสิทธิภาพ
+            ใช้ <strong style={{ color: '#a78bfa' }}>Deep Neural Network (DNN)</strong> แบบ Sequential ขนาด 2 Hidden Layers (128 → 64 neurons)
           </Typography>
 
           <Divider sx={{ borderColor: 'rgba(139,92,246,0.1)', my: 3 }} />
@@ -272,11 +266,10 @@ export default function NNExplanation() {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Box>
               <Typography variant="subtitle2" sx={{ color: '#60a5fa', mb: 0.5 }}>
-                🔥 Activation Function: ReLU (Rectified Linear Unit)
+                🔥 Activation Function: ReLU
               </Typography>
               <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-                f(x) = max(0, x) — ใช้ใน Hidden Layers เพื่อเพิ่ม Non-Linearity ให้โมเดลเรียนรู้ patterns ที่ซับซ้อนได้
-                มีข้อดีคือคำนวณเร็วและลดปัญหา Vanishing Gradient
+                f(x) = max(0, x) — ถูกเรียกใช้ในตำแหน่งอากิวเมนต์ของ Hidden Layers
               </Typography>
             </Box>
             <Box>
@@ -284,17 +277,15 @@ export default function NNExplanation() {
                 📊 Output: Sigmoid Function
               </Typography>
               <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-                σ(x) = 1/(1+e⁻ˣ) — แปลงค่า Output เป็นช่วง [0, 1] เพื่อใช้เป็นค่าความน่าจะเป็น
-                ถ้า ≥ 0.5 = Malicious, ถ้า &lt; 0.5 = Safe
+                σ(x) = 1/(1+e⁻ˣ) — แปลง Output Layer เป็นค่าช่วงทศนิยม [0, 1] สำหรับตรวจสอบ Threshold
               </Typography>
             </Box>
             <Box>
               <Typography variant="subtitle2" sx={{ color: '#f59e0b', mb: 0.5 }}>
-                🛡️ Dropout Regularization (30%)
+                🛡️ Dropout (30%)
               </Typography>
               <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-                สุ่มปิด 30% ของ Neurons ในแต่ละรอบการ Train เพื่อป้องกัน Overfitting
-                ทำให้โมเดลเรียนรู้ Features ที่หลากหลายมากขึ้น และลดการพึ่งพา Neurons ชุดใดชุดหนึ่งมากเกินไป
+                กำหนดอัตรา Dropout ที่ 0.3 เพื่อสุ่มปิดชุดข้อมูล 30% ระหว่างการส่งต่อใน Layer
               </Typography>
             </Box>
           </Box>
