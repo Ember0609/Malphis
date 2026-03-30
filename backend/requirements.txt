@@ -3,7 +3,7 @@ uvicorn
 python-multipart
 scikit-learn
 xgboost
-tensorflow-cpu
+tflite-runtime
 joblib
 pandas
 numpy
