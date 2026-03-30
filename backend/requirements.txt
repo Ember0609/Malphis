@@ -1,10 +1,9 @@
-
 fastapi
 uvicorn
 python-multipart
 scikit-learn
 xgboost
-tensorflow
+tensorflow-cpu
 joblib
 pandas
 numpy
