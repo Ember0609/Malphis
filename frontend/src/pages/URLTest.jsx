@@ -23,7 +23,9 @@ import SmartToyIcon from '@mui/icons-material/SmartToy';
 import FingerprintIcon from '@mui/icons-material/Fingerprint';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000/api/url/predict';
+const API_URL = import.meta.env.VITE_API_URL 
+  ? `${import.meta.env.VITE_API_URL}/api/url/predict` 
+  : 'http://localhost:8000/api/url/predict';
 
 export default function URLTest() {
   const [url, setUrl] = useState('');
