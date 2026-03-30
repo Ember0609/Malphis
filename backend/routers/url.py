@@ -24,7 +24,7 @@ def load_top_sites():
         print(f"❌ Warning: Top Sites file not found at {TOP_SITES_PATH}")
         return
     try:
-        max_domains = 100000  # LIMIT: อ่านแค่ 100,000 เว็บหลักเพื่อประหยัด RAM (ลดไปได้เกือบ 100MB)
+        max_domains = 100000
         count = 0
         with open(TOP_SITES_PATH, 'r', encoding='utf-8') as f:
             for line in f:
@@ -43,7 +43,6 @@ load_top_sites()
 for d in ["google.com", "facebook.com", "youtube.com", "kaggle.com", "thaipbs.or.th"]:
     TOP_SITES.add(d)
 
-# 🌟 3. โหลด Model AI
 try:
     interpreter = tflite.Interpreter(model_path=os.path.join(MODEL_DIR, 'url_nn_model.tflite'))
     interpreter.allocate_tensors()
@@ -54,7 +53,6 @@ try:
     imputer = joblib.load(os.path.join(MODEL_DIR, 'url_imputer.pkl'))
     print("✅ URL Models (TFLite) Loaded Successfully!")
     
-    # คืนพื้นที่ RAM ที่ใช้ตอนโหลดไฟล์ให้ระบบ
     gc.collect()
 except Exception as e:
     print(f"❌ Error loading models: {e}")
@@ -67,7 +65,6 @@ async def predict_url(request: URLRequest):
     try:
         url_input = request.url.strip()
         
-        # ดึงโดเมนออกมาเช็ค Whitelist
         temp_url = url_input if url_input.startswith('http') else 'http://' + url_input
         parsed = urlparse(temp_url)
         domain = parsed.netloc.lower()
