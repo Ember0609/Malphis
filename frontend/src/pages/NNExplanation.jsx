@@ -126,18 +126,29 @@ export default function NNExplanation() {
         <CardContent sx={{ p: 4 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
             <StorageIcon sx={{ color: 'secondary.main' }} />
-            <Typography variant="h5">1. การเตรียมข้อมูล (Data Preparation)</Typography>
+            <Typography variant="h5">1. การเตรียมข้อมูล & Feature Engineering</Typography>
           </Box>
 
           <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3, lineHeight: 1.8 }}>
-            ใช้ชุดข้อมูล <strong style={{ color: '#a78bfa' }}>Url.csv</strong> ซึ่งประกอบด้วย URL ดิบ จากนั้นใช้ฟังก์ชัน{' '}
-            <strong style={{ color: '#a78bfa' }}>extract_url_features()</strong> สกัดคุณลักษณะออกมาเป็นตัวเลข
-            รวม <strong style={{ color: '#34d399' }}>57 Features</strong> ใน 6 กลุ่มหลัก สำหรับจำแนก URL ว่าปลอดภัยหรืออันตราย (Phishing / Defacement)
+            ในการจำแนก URL ว่าปลอดภัยหรืออันตราย โมเดลไม่สามารถอ่านข้อความ URL ได้ตรงๆ เราจึงต้องทำ <strong style={{ color: '#a78bfa' }}>Feature Engineering</strong> โดยใช้ฟังก์ชัน <strong style={{ color: '#a78bfa' }}>extract_url_features()</strong> สกัดคุณลักษณะเชิงโครงสร้าง (Lexical) และความผิดปกติ (Anomalies) ออกมาเป็นตัวเลข รวม <strong style={{ color: '#34d399' }}>57 Features</strong> เพื่อป้อนให้ Neural Network
           </Typography>
 
           <Typography variant="subtitle2" sx={{ color: 'secondary.light', mb: 2 }}>
             <DatasetIcon sx={{ fontSize: 18, mr: 0.5, verticalAlign: 'text-bottom' }} />
-            ตัวอย่าง Features สำคัญ:
+            เทคนิคการสกัด Features (แบ่งเป็น 6 หมวดหลัก):
+          </Typography>
+          
+          <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3, lineHeight: 1.8 }}>
+            <strong style={{ color: '#60a5fa' }}>1. Basic:</strong> จำนวนอักษรพิเศษ, สัดส่วนตัวเลขต่อตัวอักษร, ความยาว URL <br/>
+            <strong style={{ color: '#60a5fa' }}>2. Binary Flags:</strong> การเข้าถึงผ่าน IP ตรงๆ (มีโอกาสเป็น Phishing สูง), การใช้บริการย่อลิงก์ (Short URL) <br/>
+            <strong style={{ color: '#60a5fa' }}>3. Defacement:</strong> ความลึกของ Path, การพบ Keyword ของการโจมตีแฝง <br/>
+            <strong style={{ color: '#60a5fa' }}>4. Phishing:</strong> ตรวจหาชื่อแบงก์หรือแบรนด์ (Brand Hijacking), TLD ที่น่าสงสัย <br/>
+            <strong style={{ color: '#60a5fa' }}>5. Enhanced:</strong> ตรวจจับคำเร่งเร้า (Urgent words) เช่น "verify", "secure", "update" <br/>
+            <strong style={{ color: '#60a5fa' }}>6. Advanced:</strong> ค่า Entropy ของตัวอักษรเพื่อจับสังเกตโดเมนที่เกิดจากการสุ่ม (DGA)
+          </Typography>
+
+          <Typography variant="subtitle2" sx={{ color: 'secondary.light', mb: 2 }}>
+            ตัวอย่าง Features บางส่วน:
           </Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 3 }}>
             {features.map((f) => (
@@ -151,28 +162,63 @@ export default function NNExplanation() {
             ))}
             <Chip label="... และอีก 39 features" size="small" sx={{ bgcolor: 'rgba(139,92,246,0.1)', color: 'secondary.light', fontSize: '0.75rem' }} />
           </Box>
-
-          <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-            กลุ่ม Features แบ่งเป็น 6 หมวด: <strong style={{ color: '#60a5fa' }}>Basic</strong> (ความยาว, ตัวอักษรพิเศษ, digits, letters),{' '}
-            <strong style={{ color: '#60a5fa' }}>Binary Flags</strong> (HTTPS, IP address, short URL),{' '}
-            <strong style={{ color: '#60a5fa' }}>Defacement</strong> (path depth, hacked terms),{' '}
-            <strong style={{ color: '#60a5fa' }}>Phishing</strong> (brand names, suspicious TLD, keywords),{' '}
-            <strong style={{ color: '#60a5fa' }}>Enhanced</strong> (urgency/security words, brand hijack) และ{' '}
-            <strong style={{ color: '#60a5fa' }}>Advanced</strong> (entropy, n-gram, consonant/vowel ratio)
-          </Typography>
         </CardContent>
       </Card>
 
-      {/* 2. Algorithm Theory */}
+      {/* 2. Feature Engineering & Preprocessing */}
+      <Card sx={{ ...glowBox, mb: 4 }}>
+        <CardContent sx={{ p: 4 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
+            <TuneIcon sx={{ color: 'secondary.main' }} />
+            <Typography variant="h5">2. Feature Engineering & Preprocessing</Typography>
+          </Box>
+
+          <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3, lineHeight: 1.8 }}>
+            เนื่องจาก Deep Neural Network มีความอ่อนไหวต่อสเกลของข้อมูลดิบอย่างมาก การเตรียมข้อมูลแบบพิเศษเจาะจงด้วยกระบวนการต่างๆ จึงจำเป็นต่อความรวดเร็วในการ Train และความแม่นยำของโมเดล:
+          </Typography>
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box>
+              <Typography variant="subtitle2" sx={{ color: '#60a5fa', mb: 0.5 }}>
+                🏷️ Lexical & Binary Feature Extraction
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
+                ข้อมูล URL จะถูกสกัดให้อยู่ในรูปของโครงสร้างกายภาพเชิงปริมาณ (Lexical Feature - เช่น การนับจำนวนอักษรพิเศษต่างๆ) 
+                และการเช็คเงื่อนไขให้ออกมาเป็นค่า Binary (0 หรือ 1) เช่น การเช็คว่ามาจากบริการ Short URL หรือไม่
+                ทำให้ได้ชุดข้อมูลตัวเลขล้วนที่พร้อมป้อนเข้าสู่โครงข่ายประสาทเทียมเพื่อประมวลผลได้ทันที
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="subtitle2" sx={{ color: '#a78bfa', mb: 0.5 }}>
+                🩹 Median Imputation (การตระเตรียมข้อมูลสูญหาย)
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
+                หากการสกัดคุณลักษณะจากบาง URL ล้มเหลวและได้จุดข้อมูลที่เป็นช่องโหว่ (NaN) จะถูกชดเชยด้วย <code>SimpleImputer(strategy='median')</code> นำค่ากึ่งกลางมาเสียบเข้าไปแทนที่เพื่อไม่ให้ข้อมูลคลาดเคลื่อนจาก Outliers จนเกินไป
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="subtitle2" sx={{ color: '#10b981', mb: 0.5 }}>
+                📏 Standardization / Feature Scaling
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
+                ขั้นตอนนี้สำคัญระดับวิกฤต (Critical) สำหรับ Deep Learning เราใช้ <code>StandardScaler</code> ปรับสเกลให้อยู่ในหน่วย Z-Score (Mean=0, Std=1) 
+                หากไม่ Scale ข้อมูล จะทำให้ค่า Gradient มหาศาลพุ่งกระฉูด (Exploding Gradient) จนส่งผลกระทบต่อ Bias ของ Neuron ในชั้นลึก
+              </Typography>
+            </Box>
+          </Box>
+        </CardContent>
+      </Card>
+
+      {/* 3. Algorithm Theory */}
       <Card sx={{ ...glowBox, mb: 4 }}>
         <CardContent sx={{ p: 4 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
             <AutoFixHighIcon sx={{ color: 'secondary.main' }} />
-            <Typography variant="h5">2. ทฤษฎีอัลกอริทึม (Algorithm Theory)</Typography>
+            <Typography variant="h5">3. หลักการทำงานของโมเดล (How the Model Works)</Typography>
           </Box>
 
           <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3, lineHeight: 1.8 }}>
-            ใช้ <strong style={{ color: '#a78bfa' }}>Deep Neural Network (DNN)</strong> แบบ Sequential 
+            ใช้ <strong style={{ color: '#a78bfa' }}>Deep Neural Network (DNN)</strong> แบบ Sequential
             ซึ่งเป็นโครงข่ายประสาทเทียม 2 Hidden Layers (128 → 64 neurons) พร้อม Dropout 30%
             ที่สามารถเรียนรู้ patterns จาก 57 Features ได้อย่างมีประสิทธิภาพ
           </Typography>
@@ -229,7 +275,7 @@ export default function NNExplanation() {
                 🔥 Activation Function: ReLU (Rectified Linear Unit)
               </Typography>
               <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-                f(x) = max(0, x) — ใช้ใน Hidden Layers เพื่อเพิ่ม Non-Linearity ให้โมเดลเรียนรู้ patterns ที่ซับซ้อนได้ 
+                f(x) = max(0, x) — ใช้ใน Hidden Layers เพื่อเพิ่ม Non-Linearity ให้โมเดลเรียนรู้ patterns ที่ซับซ้อนได้
                 มีข้อดีคือคำนวณเร็วและลดปัญหา Vanishing Gradient
               </Typography>
             </Box>
@@ -238,7 +284,7 @@ export default function NNExplanation() {
                 📊 Output: Sigmoid Function
               </Typography>
               <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-                σ(x) = 1/(1+e⁻ˣ) — แปลงค่า Output เป็นช่วง [0, 1] เพื่อใช้เป็นค่าความน่าจะเป็น 
+                σ(x) = 1/(1+e⁻ˣ) — แปลงค่า Output เป็นช่วง [0, 1] เพื่อใช้เป็นค่าความน่าจะเป็น
                 ถ้า ≥ 0.5 = Malicious, ถ้า &lt; 0.5 = Safe
               </Typography>
             </Box>
@@ -247,7 +293,7 @@ export default function NNExplanation() {
                 🛡️ Dropout Regularization (30%)
               </Typography>
               <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-                สุ่มปิด 30% ของ Neurons ในแต่ละรอบการ Train เพื่อป้องกัน Overfitting 
+                สุ่มปิด 30% ของ Neurons ในแต่ละรอบการ Train เพื่อป้องกัน Overfitting
                 ทำให้โมเดลเรียนรู้ Features ที่หลากหลายมากขึ้น และลดการพึ่งพา Neurons ชุดใดชุดหนึ่งมากเกินไป
               </Typography>
             </Box>
@@ -255,12 +301,12 @@ export default function NNExplanation() {
         </CardContent>
       </Card>
 
-      {/* 3. Development Steps */}
+      {/* 4. Development Steps */}
       <Card sx={{ ...glowBox, mb: 4 }}>
         <CardContent sx={{ p: 4 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
             <AccountTreeIcon sx={{ color: 'secondary.main' }} />
-            <Typography variant="h5">3. ขั้นตอนการพัฒนาโมเดล</Typography>
+            <Typography variant="h5">4. ขั้นตอนการพัฒนาโมเดล</Typography>
           </Box>
 
           <Stepper orientation="vertical" sx={{ '& .MuiStepConnector-line': { borderColor: 'rgba(139,92,246,0.3)' } }}>
@@ -303,41 +349,6 @@ export default function NNExplanation() {
               </Box>
             ))}
           </Box>
-        </CardContent>
-      </Card>
-
-      {/* 4. References */}
-      <Card sx={{ ...glowBox, mb: 4 }}>
-        <CardContent sx={{ p: 4 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
-            <MenuBookIcon sx={{ color: 'secondary.main' }} />
-            <Typography variant="h5">4. แหล่งอ้างอิง (References)</Typography>
-          </Box>
-          <List dense>
-            {[
-              { title: 'TensorFlow / Keras Documentation', url: 'https://www.tensorflow.org/guide/keras' },
-              { title: 'Deep Learning - Ian Goodfellow et al.', url: 'https://www.deeplearningbook.org/' },
-              { title: 'Keras Sequential Model Guide', url: 'https://keras.io/guides/sequential_model/' },
-              { title: 'Understanding Dropout Regularization', url: 'https://jmlr.org/papers/v15/srivastava14a.html' },
-              { title: 'URL Feature Extraction for Phishing Detection', url: 'https://arxiv.org/abs/2002.07725' },
-              { title: 'Adam Optimizer - Kingma & Ba (2014)', url: 'https://arxiv.org/abs/1412.6980' },
-            ].map((ref, i) => (
-              <ListItem key={i} sx={{ px: 0 }}>
-                <ListItemIcon sx={{ minWidth: 32 }}>
-                  <CheckCircleOutlineIcon sx={{ color: 'secondary.main', fontSize: 18 }} />
-                </ListItemIcon>
-                <ListItemText
-                  primary={
-                    <Link href={ref.url} target="_blank" rel="noopener" sx={{ color: 'secondary.light', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
-                      {ref.title}
-                    </Link>
-                  }
-                  secondary={ref.url}
-                  secondaryTypographyProps={{ sx: { color: 'text.secondary', fontSize: '0.7rem' } }}
-                />
-              </ListItem>
-            ))}
-          </List>
         </CardContent>
       </Card>
     </Box>

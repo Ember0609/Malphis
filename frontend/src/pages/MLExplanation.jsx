@@ -123,8 +123,8 @@ export default function MLExplanation() {
           </Box>
 
           <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3, lineHeight: 1.8 }}>
-            ใช้ชุดข้อมูล <strong style={{ color: '#60a5fa' }}>Malware.csv</strong> ซึ่งประกอบด้วยข้อมูลคุณลักษณะ (Features) จากไฟล์ PE (Portable Executable) 
-            เช่น .exe และ .dll โดยข้อมูลแต่ละแถวมี Label เป็น "Malware" หรือ "Benign" 
+            ใช้ชุดข้อมูล <strong style={{ color: '#60a5fa' }}>Malware.csv</strong> ซึ่งประกอบด้วยข้อมูลคุณลักษณะ (Features) จากไฟล์ PE (Portable Executable)
+            เช่น .exe และ .dll โดยข้อมูลแต่ละแถวมี Label เป็น "Malware" หรือ "Benign"
             ข้อมูลถูกแปลงเป็นรูปแบบตัวเลข (0=Malware, 1=Benign) สำหรับการฝึกสอนโมเดล
           </Typography>
 
@@ -145,23 +145,67 @@ export default function MLExplanation() {
           </Box>
 
           <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-            ขั้นตอนการเตรียมข้อมูล: ลบข้อมูลซ้ำ → แทนค่าที่หายไปด้วยค่ามัธยฐาน (Median Imputation) → 
+            ขั้นตอนการเตรียมข้อมูล: ลบข้อมูลซ้ำ → แทนค่าที่หายไปด้วยค่ามัธยฐาน (Median Imputation) →
             แบ่งข้อมูล 80% Train / 20% Test → ปรับสเกลด้วย StandardScaler (Z-score Normalization)
           </Typography>
         </CardContent>
       </Card>
 
-      {/* 2. Algorithm Theory */}
+      {/* 2. Feature Engineering & Preprocessing */}
+      <Card sx={{ ...glowBox, mb: 4 }}>
+        <CardContent sx={{ p: 4 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
+            <TuneIcon sx={{ color: 'primary.main' }} />
+            <Typography variant="h5">2. Feature Engineering & Preprocessing</Typography>
+          </Box>
+
+          <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3, lineHeight: 1.8 }}>
+            ก่อนนำข้อมูลเข้าสู่โมเดล ข้อมูลดิบจะต้องผ่านกระบวนการแปลงและทำความสะอาดให้อยู่ในรูปแบบที่อัลกอริทึมสามารถเรียนรู้ได้อย่างมีประสิทธิภาพที่สุด (Data Transformation):
+          </Typography>
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box>
+              <Typography variant="subtitle2" sx={{ color: '#60a5fa', mb: 0.5 }}>
+                🔄 Label Encoding (การแปลงตัวแปรเป้าหมาย)
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
+                แปลงคลาสผลลัพธ์ที่เป็นข้อความให้เป็นตัวเลข เช่น "Malware" ถูกแปลงเป็น 0 และ "Benign" ถูกแปลงเป็น 1 เพื่อให้คณิตศาสตร์ในโมเดลประมวลผลได้
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="subtitle2" sx={{ color: '#a78bfa', mb: 0.5 }}>
+                🩹 Median Imputation (การจัดการข้อมูลสูญหาย)
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
+                ในกรณีที่ไฟล์ PE บางไฟล์มีฟีเจอร์บางตัวสกัดออกมาไม่ได้หรือเป็นค่าว่าง (NaN) เราใช้ <code>SimpleImputer(strategy='median')</code> 
+                เพื่อเติมค่าที่หายไปด้วย "ค่ามัธยฐาน" ของข้อมูลคอลัมน์นั้นๆ ซึ่งมีข้อดีคือทนทานต่อค่าผิดปกติ (Outliers) ได้ดีกว่าการเติมด้วยค่าเฉลี่ย
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="subtitle2" sx={{ color: '#34d399', mb: 0.5 }}>
+                📏 Feature Scaling (การปรับพื้นที่สเกล)
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
+                เนื่องจากค่าของแต่ละ Feature ใน PE File มีหน่วยและขนาดห่างกันมาก (เช่น SizeOfStackReserve มีค่าเป็นล้าน แต่ NumberOfSections มีค่าหลักสิบ)
+                เราจึงใช้ <code>StandardScaler</code> หรือ Z-score Normalization ปรับให้ทุก Feature มีช่วงที่เท่าเทียมกัน (Mean=0, SD=1)
+                เพื่อให้โมเดลเรียนรู้ความสำคัญของแต่ละฟีเจอร์ได้อย่างสมดุล และไม่เอนเอียงไปลดความสำคัญของฟีเจอร์ที่มีค่าน้อย
+              </Typography>
+            </Box>
+          </Box>
+        </CardContent>
+      </Card>
+
+      {/* 3. Algorithm Theory */}
       <Card sx={{ ...glowBox, mb: 4 }}>
         <CardContent sx={{ p: 4 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
             <AutoFixHighIcon sx={{ color: 'primary.main' }} />
-            <Typography variant="h5">2. ทฤษฎีอัลกอริทึม (Algorithm Theory)</Typography>
+            <Typography variant="h5">3. หลักการทำงานของโมเดล (How the Model Works)</Typography>
           </Box>
 
           <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3, lineHeight: 1.8 }}>
-            ใช้เทคนิค <strong style={{ color: '#60a5fa' }}>Ensemble Learning</strong> แบบ Voting Classifier (Soft Voting) 
-            ซึ่งรวมการพยากรณ์จากหลายโมเดลเข้าด้วยกัน โดยใช้ค่าความน่าจะเป็นเฉลี่ยในการตัดสินผลลัพธ์สุดท้าย 
+            ใช้เทคนิค <strong style={{ color: '#60a5fa' }}>Ensemble Learning</strong> แบบ Voting Classifier (Soft Voting)
+            ซึ่งรวมการพยากรณ์จากหลายโมเดลเข้าด้วยกัน โดยใช้ค่าความน่าจะเป็นเฉลี่ยในการตัดสินผลลัพธ์สุดท้าย
             ทำให้ได้ผลลัพธ์ที่แม่นยำกว่าการใช้โมเดลเดี่ยว
           </Typography>
 
@@ -174,7 +218,7 @@ export default function MLExplanation() {
                 🌲 Random Forest Classifier
               </Typography>
               <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-                สร้าง Decision Tree จำนวน 100 ต้น แต่ละต้นเรียนรู้จากข้อมูลที่สุ่มมา (Bootstrap Sampling) 
+                สร้าง Decision Tree จำนวน 100 ต้น แต่ละต้นเรียนรู้จากข้อมูลที่สุ่มมา (Bootstrap Sampling)
                 และสุ่มเลือก Features เพื่อลดปัญหา Overfitting ผลลัพธ์สุดท้ายใช้วิธี Majority Voting จากทุกต้นไม้
               </Typography>
             </Box>
@@ -183,8 +227,8 @@ export default function MLExplanation() {
                 ⚡ XGBoost (Extreme Gradient Boosting)
               </Typography>
               <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-                อัลกอริทึมแบบ Gradient Boosting ที่สร้าง Decision Trees ต่อเนื่องกัน 100 ต้น 
-                โดยต้นไม้แต่ละต้นจะเรียนรู้จาก "ข้อผิดพลาด" ของต้นก่อนหน้า ใช้ Regularization เพื่อป้องกัน Overfitting 
+                อัลกอริทึมแบบ Gradient Boosting ที่สร้าง Decision Trees ต่อเนื่องกัน 100 ต้น
+                โดยต้นไม้แต่ละต้นจะเรียนรู้จาก "ข้อผิดพลาด" ของต้นก่อนหน้า ใช้ Regularization เพื่อป้องกัน Overfitting
                 และ eval_metric='logloss' สำหรับวัดประสิทธิภาพ
               </Typography>
             </Box>
@@ -193,7 +237,7 @@ export default function MLExplanation() {
                 📈 Logistic Regression
               </Typography>
               <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-                อัลกอริทึมเชิงเส้นที่ใช้ Sigmoid Function แปลงผลลัพธ์เป็นค่าความน่าจะเป็น (0-1) 
+                อัลกอริทึมเชิงเส้นที่ใช้ Sigmoid Function แปลงผลลัพธ์เป็นค่าความน่าจะเป็น (0-1)
                 เหมาะสำหรับปัญหา Binary Classification ตั้งค่า max_iter=1000 เพื่อให้ Convergence ได้อย่างสมบูรณ์
               </Typography>
             </Box>
@@ -201,12 +245,12 @@ export default function MLExplanation() {
         </CardContent>
       </Card>
 
-      {/* 3. Development Steps */}
+      {/* 4. Development Steps */}
       <Card sx={{ ...glowBox, mb: 4 }}>
         <CardContent sx={{ p: 4 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
             <AccountTreeIcon sx={{ color: 'primary.main' }} />
-            <Typography variant="h5">3. ขั้นตอนการพัฒนาโมเดล</Typography>
+            <Typography variant="h5">4. ขั้นตอนการพัฒนาโมเดล</Typography>
           </Box>
 
           <Stepper orientation="vertical" sx={{ '& .MuiStepConnector-line': { borderColor: 'rgba(59,130,246,0.3)' } }}>
@@ -249,41 +293,6 @@ export default function MLExplanation() {
               </Box>
             ))}
           </Box>
-        </CardContent>
-      </Card>
-
-      {/* 4. References */}
-      <Card sx={{ ...glowBox, mb: 4 }}>
-        <CardContent sx={{ p: 4 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
-            <MenuBookIcon sx={{ color: 'primary.main' }} />
-            <Typography variant="h5">4. แหล่งอ้างอิง (References)</Typography>
-          </Box>
-          <List dense>
-            {[
-              { title: 'Scikit-learn: VotingClassifier', url: 'https://scikit-learn.org/stable/modules/ensemble.html#voting-classifier' },
-              { title: 'XGBoost Documentation', url: 'https://xgboost.readthedocs.io/' },
-              { title: 'Scikit-learn: Random Forest', url: 'https://scikit-learn.org/stable/modules/ensemble.html#random-forests' },
-              { title: 'Scikit-learn: Logistic Regression', url: 'https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression' },
-              { title: 'PE File Format - Microsoft Docs', url: 'https://learn.microsoft.com/en-us/windows/win32/debug/pe-format' },
-              { title: 'Malware Analysis Dataset (VirusShare)', url: 'https://virusshare.com/' },
-            ].map((ref, i) => (
-              <ListItem key={i} sx={{ px: 0 }}>
-                <ListItemIcon sx={{ minWidth: 32 }}>
-                  <CheckCircleOutlineIcon sx={{ color: 'primary.main', fontSize: 18 }} />
-                </ListItemIcon>
-                <ListItemText
-                  primary={
-                    <Link href={ref.url} target="_blank" rel="noopener" sx={{ color: 'primary.light', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
-                      {ref.title}
-                    </Link>
-                  }
-                  secondary={ref.url}
-                  secondaryTypographyProps={{ sx: { color: 'text.secondary', fontSize: '0.7rem' } }}
-                />
-              </ListItem>
-            ))}
-          </List>
         </CardContent>
       </Card>
     </Box>

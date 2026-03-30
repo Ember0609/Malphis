@@ -8,59 +8,86 @@ import numpy as np
 # Malware PE Feature Extraction
 # ---------------------------------------------------------------------------
 
-MALWARE_FEATURE_COLUMNS = [
-    "Machine", "DebugSize", "DebugRVA", "MajorImageVersion",
-    "MajorOSVersion", "ExportRVA", "ExportSize", "IatVRA",
-    "MajorLinkerVersion", "MinorLinkerVersion", "NumberOfSections",
-    "SizeOfStackReserve", "DllCharacteristics", "ResourceSize",
-    "BitcoinAddresses",
-]
+def calculate_entropy(data):
+    """คำนวณความยุ่งเหยิงของข้อมูล (Shannon Entropy)"""
+    if not data:
+        return 0.0
+    entropy = 0
+    for x in range(256):
+        p_x = float(data.count(x)) / len(data)
+        if p_x > 0:
+            entropy += - p_x * math.log(p_x, 2)
+    return entropy
 
-def extract_pe_features(pe) -> dict:
+def extract_pe_features(pe, file_bytes: bytes) -> dict:
     features = {}
-    try: features["Machine"] = pe.FILE_HEADER.Machine
-    except Exception: features["Machine"] = 0
+    
     try:
-        dbg = pe.OPTIONAL_HEADER.DATA_DIRECTORY[6]
-        features["DebugSize"] = dbg.Size
-        features["DebugRVA"] = dbg.VirtualAddress
-    except Exception:
-        features["DebugSize"] = 0
-        features["DebugRVA"] = 0
-    try: features["MajorImageVersion"] = pe.OPTIONAL_HEADER.MajorImageVersion
-    except Exception: features["MajorImageVersion"] = 0
-    try: features["MajorOSVersion"] = pe.OPTIONAL_HEADER.MajorOperatingSystemVersion
-    except Exception: features["MajorOSVersion"] = 0
-    try:
-        exp = pe.OPTIONAL_HEADER.DATA_DIRECTORY[0]
-        features["ExportRVA"] = exp.VirtualAddress
-        features["ExportSize"] = exp.Size
-    except Exception:
-        features["ExportRVA"] = 0
-        features["ExportSize"] = 0
-    try:
-        iat = pe.OPTIONAL_HEADER.DATA_DIRECTORY[12]
-        features["IatVRA"] = iat.VirtualAddress
-    except Exception: features["IatVRA"] = 0
-    try: features["MajorLinkerVersion"] = pe.OPTIONAL_HEADER.MajorLinkerVersion
-    except Exception: features["MajorLinkerVersion"] = 0
-    try: features["MinorLinkerVersion"] = pe.OPTIONAL_HEADER.MinorLinkerVersion
-    except Exception: features["MinorLinkerVersion"] = 0
-    try: features["NumberOfSections"] = pe.FILE_HEADER.NumberOfSections
-    except Exception: features["NumberOfSections"] = 0
-    try: features["SizeOfStackReserve"] = pe.OPTIONAL_HEADER.SizeOfStackReserve
-    except Exception: features["SizeOfStackReserve"] = 0
-    try: features["DllCharacteristics"] = pe.OPTIONAL_HEADER.DllCharacteristics
-    except Exception: features["DllCharacteristics"] = 0
-    try:
-        res = pe.OPTIONAL_HEADER.DATA_DIRECTORY[2]
-        features["ResourceSize"] = res.Size
-    except Exception: features["ResourceSize"] = 0
-    features["BitcoinAddresses"] = 0
+        features['ImageBase'] = pe.OPTIONAL_HEADER.ImageBase
+        features['MajorOperatingSystemVersion'] = pe.OPTIONAL_HEADER.MajorOperatingSystemVersion
+        features['MinorOperatingSystemVersion'] = pe.OPTIONAL_HEADER.MinorOperatingSystemVersion
+        features['MajorSubsystemVersion'] = pe.OPTIONAL_HEADER.MajorSubsystemVersion
+        features['MinorSubsystemVersion'] = pe.OPTIONAL_HEADER.MinorSubsystemVersion
+        features['Subsystem'] = pe.OPTIONAL_HEADER.Subsystem
+        features['SizeOfStackReserve'] = pe.OPTIONAL_HEADER.SizeOfStackReserve
+        features['SizeOfHeapReserve'] = pe.OPTIONAL_HEADER.SizeOfHeapReserve
+        features['SizeOfHeapCommit'] = pe.OPTIONAL_HEADER.SizeOfHeapCommit
+        
+        fh_char = pe.FILE_HEADER.Characteristics
+        features['FH_char0'] = (fh_char >> 0) & 1
+        features['FH_char2'] = (fh_char >> 2) & 1
+        features['FH_char3'] = (fh_char >> 3) & 1
+        features['FH_char12'] = (fh_char >> 12) & 1
+        
+        dll_char = pe.OPTIONAL_HEADER.DllCharacteristics
+        features['OH_DLLchar0'] = (dll_char >> 0) & 1
+        features['OH_DLLchar2'] = (dll_char >> 2) & 1
+        features['OH_DLLchar7'] = (dll_char >> 7) & 1
+        
+        features['E_file'] = calculate_entropy(file_bytes)
+        
+        e_text = 0.0
+        e_data = 0.0
+        sus_sections = 0
+        standard_sections = [b'.text', b'.data', b'.rdata', b'.rsrc', b'.bss', b'.edata', b'.idata', b'.pdata', b'.reloc']
+        
+        for section in pe.sections:
+            name = section.Name.replace(b'\x00', b'')
+            if name == b'.text':
+                e_text = calculate_entropy(section.get_data())
+            elif name == b'.data':
+                e_data = calculate_entropy(section.get_data())
+            
+            if name not in standard_sections:
+                sus_sections += 1
+                
+        features['E_text'] = e_text
+        features['E_data'] = e_data
+        features['sus_sections'] = sus_sections
+        
+        features['fileinfo'] = 1 if hasattr(pe, 'FileInfo') and len(pe.FileInfo) > 0 else 0
+
+        # --- เพิ่มการดึงค่า Raw Features ก่อนแปลง ---
+        features['SizeOfCode'] = getattr(pe.OPTIONAL_HEADER, 'SizeOfCode', 0)
+        features['SizeOfInitializedData'] = getattr(pe.OPTIONAL_HEADER, 'SizeOfInitializedData', 0)
+        features['SizeOfImage'] = getattr(pe.OPTIONAL_HEADER, 'SizeOfImage', 0)
+        features['filesize'] = len(file_bytes)
+
+        # --- คำนวณ Engineered Features แบบเดียวกับตอน Train ---
+        features['Code_to_Image_Ratio'] = features['SizeOfCode'] / (features['SizeOfImage'] + 1e-5)
+        features['InitData_to_Image_Ratio'] = features['SizeOfInitializedData'] / (features['SizeOfImage'] + 1e-5)
+        features['Entropy_Diff'] = abs(features['E_text'] - features['E_data'])
+
+        for col in ['filesize', 'SizeOfCode', 'SizeOfInitializedData', 'SizeOfImage']:
+            features[f'Log_{col}'] = np.log1p(features[col])
+
+    except Exception as e:
+        pass
+
     return features
 
 # ---------------------------------------------------------------------------
-# URL Feature Extraction (เวอร์ชันตัดคอลัมน์ Web ออก คลีน 100%)
+# URL Feature Extraction
 # ---------------------------------------------------------------------------
 
 URL_FEATURE_COLUMNS = [

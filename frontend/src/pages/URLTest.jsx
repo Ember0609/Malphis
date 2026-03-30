@@ -23,8 +23,8 @@ import SmartToyIcon from '@mui/icons-material/SmartToy';
 import FingerprintIcon from '@mui/icons-material/Fingerprint';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL 
-  ? `${import.meta.env.VITE_API_URL}/api/url/predict` 
+const API_URL = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api/url/predict`
   : 'http://localhost:8000/api/url/predict';
 
 export default function URLTest() {
@@ -129,8 +129,9 @@ export default function URLTest() {
               {[
                 'google.com',
                 'phishing-login.suspicious.tk/verify-account',
-                'https://github.com',
-                '192.168.1.1/admin/login.php',
+                'https://tatlerasia.com',
+                'https://pub-fe2732f0fa494bff9409ec9a9eea207e.r2.dev/index.html',
+                'https://relaypickup-livraison.com/'
               ].map((example) => (
                 <Button
                   key={example}
