@@ -54,7 +54,7 @@ export default function MLExplanation() {
   const steps = [
     {
       label: 'โหลดและคัดกรองข้อมูล',
-      desc: 'นำเข้าข้อมูลไฟล์ PE 19,611 รายการจาก dataset_malwares.csv',
+      desc: 'นำเข้าข้อมูลไฟล์ PE จาก dataset_malwares.csv',
     },
     {
       label: 'เลือก Robust Features',
@@ -70,7 +70,7 @@ export default function MLExplanation() {
     },
     {
       label: 'ประมวลผลด้วย Ensemble AI',
-      desc: 'สร้าง Voting Classifier ผสานโมเดลท็อปคลาส (XGBoost, Random Forest, GBDT) แบบ Soft Voting',
+      desc: 'สร้าง Voting Classifier ผสานโมเดลท็อปคลาส (XGBoost, Random Forest, Extra Trees) แบบ Soft Voting',
     },
   ];
 
@@ -105,7 +105,7 @@ export default function MLExplanation() {
         <Chip label="Ensemble Voting" size="small" sx={{ mr: 1, bgcolor: 'rgba(59,130,246,0.15)', color: 'primary.light' }} />
         <Chip label="Random Forest" size="small" sx={{ mr: 1, bgcolor: 'rgba(139,92,246,0.15)', color: 'secondary.light' }} />
         <Chip label="XGBoost" size="small" sx={{ mr: 1, bgcolor: 'rgba(16,185,129,0.15)', color: 'success.light' }} />
-        <Chip label="Gradient Boosting" size="small" sx={{ bgcolor: 'rgba(244,63,94,0.15)', color: '#fb7185' }} />
+        <Chip label="Extra Trees" size="small" sx={{ bgcolor: 'rgba(244,63,94,0.15)', color: '#fb7185' }} />
       </Box>
 
       {/* 1. Data Preparation */}
@@ -117,7 +117,7 @@ export default function MLExplanation() {
           </Box>
 
           <Typography variant="body1" sx={{ color: 'text.secondary', mb: 3, lineHeight: 1.8 }}>
-            ใช้ชุดข้อมูล <Link href="https://www.kaggle.com/datasets/amauricio/pe-files-malwares?select=dataset_malwares.csv" target="_blank" rel="noopener noreferrer" sx={{ color: '#60a5fa', fontWeight: 'bold', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>dataset_malwares.csv</Link> 
+            ใช้ชุดข้อมูล <Link href="https://www.kaggle.com/datasets/amauricio/pe-files-malwares?select=dataset_malwares.csv" target="_blank" rel="noopener noreferrer" sx={{ color: '#60a5fa', fontWeight: 'bold', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>dataset_malwares.csv </Link>
             ทำการสกัด Features โครงสร้าง (Robust Features) และกำหนด Label เป็น 1=Malware, 0=Benign
           </Typography>
 
@@ -201,7 +201,7 @@ export default function MLExplanation() {
                 🌲 Random Forest Classifier
               </Typography>
               <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-                ใช้ 100 ต้น (n_estimators=100) ทำงานครอบกับ Bootstrap Sampling และ Majority Voting
+                จำนวน 200 ต้น (n_estimators=200) บังคับ max_depth=20 เพื่อป้องกัน Overfitting ทำงานครอบกับ Bootstrap Sampling และ Majority Voting
               </Typography>
             </Box>
             <Box>
@@ -209,15 +209,15 @@ export default function MLExplanation() {
                 ⚡ XGBClassifier
               </Typography>
               <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-                จำนวน 100 ต้น กำหนดพารามิเตอร์ eval_metric='logloss'
+                จำนวน 200 ต้น บังคับ max_depth=5 พร้อมสุ่มฟีเจอร์และข้อมูล (subsample=0.8, colsample_bytree=0.8) เพื่อเพิ่มความยืดหยุ่นในการเรียนรู้
               </Typography>
             </Box>
             <Box>
               <Typography variant="h6" sx={{ color: '#fb7185', mb: 1, fontSize: '1rem' }}>
-                📉 GradientBoostingClassifier
+                🌳 ExtraTreesClassifier
               </Typography>
               <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-                จำนวน 100 ต้น เป็นองค์ประกอบร่วมแบบ Boosting ในกระบวนการ Ensemble
+                จำนวน 200 ต้น บังคับ max_depth=20 ใช้การสุ่มข้อมูลและจุดตัดกิ่งแบบสุดโต่ง เพื่อสร้างมุมมองที่หลากหลายในการโหวตคะแนน
               </Typography>
             </Box>
           </Box>
@@ -259,13 +259,15 @@ export default function MLExplanation() {
           </Box>
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
             {[
-              { k: 'Random Forest n_estimators', v: '100' },
-              { k: 'XGBoost n_estimators', v: '100' },
-              { k: 'XGBoost eval_metric', v: 'logloss' },
-              { k: 'Gradient Boosting n_estimators', v: '100' },
+              { k: 'Random Forest n_estimators', v: '200' },
+              { k: 'Random Forest max_depth', v: '20' },
+              { k: 'XGBoost n_estimators', v: '200' },
+              { k: 'XGBoost max_depth', v: '5' },
+              { k: 'XGBoost subsample', v: '0.8' },
+              { k: 'Extra Trees n_estimators', v: '200' },
+              { k: 'Extra Trees max_depth', v: '20' },
               { k: 'Voting', v: 'Soft' },
               { k: 'Test Size', v: '20%' },
-              { k: 'Dataset Status', v: 'dataset_malwares.csv (19k Files)' },
             ].map((p) => (
               <Box key={p.k} sx={{ p: 1.5, bgcolor: 'rgba(59,130,246,0.05)', borderRadius: 2, border: '1px solid rgba(59,130,246,0.1)' }}>
                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>{p.k}</Typography>
